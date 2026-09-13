@@ -161,8 +161,12 @@ def inspect(run) -> None:
     pending_content = run(f"if test -f {shlex.quote(PENDING_NGINX)}; then /bin/sed -n '1,220p' {shlex.quote(PENDING_NGINX)}; else true; fi", sudo=True)
     print("PENDING_CONTENT=" + pending_content.replace("\n", " | "))
     print("CERTBOT_STATUS=" + run("if command -v certbot >/dev/null 2>&1; then certbot certificates 2>&1 || true; else echo CERTBOT_NOT_INSTALLED; fi", sudo=True).replace("\n", " | "))
+    print("ACME_STATUS=" + run("if command -v acme.sh >/dev/null 2>&1; then acme.sh --version 2>&1 || true; elif test -d /root/.acme.sh; then echo ROOT_ACME_DIR_PRESENT; elif test -d /home/deploy/.acme.sh; then echo DEPLOY_ACME_DIR_PRESENT; else echo ACME_CLIENT_NOT_FOUND; fi", sudo=True).replace("\n", " | "))
+    print("TLS_CERT_METADATA=" + run("for cert in /etc/mychangli/tls/*.crt /etc/letsencrypt/live/*/fullchain.pem; do if test -f \"$cert\"; then /usr/bin/openssl x509 -in \"$cert\" -noout -subject -issuer -dates 2>/dev/null || true; fi; done", sudo=True).replace("\n", " | "))
     print("UFW_STATUS=" + run("if command -v ufw >/dev/null 2>&1; then ufw status 2>&1 || true; else echo UFW_NOT_INSTALLED; fi", sudo=True).replace("\n", " | "))
     print("IPTABLES_STATUS=" + run("if command -v iptables >/dev/null 2>&1; then iptables -S 2>&1 | head -80 || true; else echo IPTABLES_NOT_INSTALLED; fi", sudo=True).replace("\n", " | "))
+    print("NFTABLES_STATUS=" + run("if command -v nft >/dev/null 2>&1; then nft list ruleset 2>&1 | head -120 || true; else echo NFT_NOT_INSTALLED; fi", sudo=True).replace("\n", " | "))
+    print("FIREWALLD_STATUS=" + run("if command -v firewall-cmd >/dev/null 2>&1; then firewall-cmd --state 2>&1 || true; else echo FIREWALLD_NOT_INSTALLED; fi", sudo=True).replace("\n", " | "))
     print("PUBLIC_HOST_SMOKE=" + run("/usr/bin/curl -k -sS -o /dev/null -w '%{http_code} %{url_effective}' --max-time 10 -H 'Host: mychangliapp.cn' https://127.0.0.1/ || true", sudo=True))
 
 
