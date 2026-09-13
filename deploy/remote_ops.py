@@ -17,6 +17,8 @@ import paramiko
 
 TARGET_ROOT = "/var/www/templates-mychangliapp"
 PENDING_NGINX = "/etc/nginx/sites-available/templates-mychangliapp.pending"
+FINAL_NGINX = "/etc/nginx/sites-available/templates-mychangliapp"
+ENABLED_NGINX = "/etc/nginx/sites-enabled/templates-mychangliapp"
 BACKUP_PARENT = "/var/backups/mychangli"
 
 
@@ -121,6 +123,9 @@ def main() -> int:
         if action == "inspect":
             inspect(run)
             return 0
+        if action == "enablehttp":
+            enable_http(run)
+            return 0
         if action != "deploystatic":
             raise RuntimeError("Unsupported Gallery action")
         deploy(run, client, files)
@@ -151,7 +156,53 @@ def inspect(run) -> None:
     print("NGINX_STATUS=" + run("/usr/bin/systemctl is-active nginx; /usr/bin/ss -ltn 2>/dev/null | grep -E ':(80|443|8787) ' || true", sudo=True).replace("\n", " | "))
     print("PENDING_CONFIG=" + run(f"if test -f {shlex.quote(PENDING_NGINX)}; then echo PRESENT; else echo ABSENT; fi", sudo=True))
     print("PENDING_ENABLED=" + run("if test -L /etc/nginx/sites-enabled/templates-mychangliapp.pending; then readlink -f /etc/nginx/sites-enabled/templates-mychangliapp.pending; else echo ABSENT; fi", sudo=True))
+    print("FINAL_CONFIG=" + run(f"if test -f {shlex.quote(FINAL_NGINX)}; then echo PRESENT; else echo ABSENT; fi", sudo=True))
+    print("GALLERY_ENABLED=" + run(f"if test -L {shlex.quote(ENABLED_NGINX)}; then readlink -f {shlex.quote(ENABLED_NGINX)}; else echo ABSENT; fi", sudo=True))
+    pending_content = run(f"if test -f {shlex.quote(PENDING_NGINX)}; then /bin/sed -n '1,220p' {shlex.quote(PENDING_NGINX)}; else true; fi", sudo=True)
+    print("PENDING_CONTENT=" + pending_content.replace("\n", " | "))
+    print("CERTBOT_STATUS=" + run("if command -v certbot >/dev/null 2>&1; then certbot certificates 2>&1 || true; else echo CERTBOT_NOT_INSTALLED; fi", sudo=True).replace("\n", " | "))
+    print("UFW_STATUS=" + run("if command -v ufw >/dev/null 2>&1; then ufw status 2>&1 || true; else echo UFW_NOT_INSTALLED; fi", sudo=True).replace("\n", " | "))
+    print("IPTABLES_STATUS=" + run("if command -v iptables >/dev/null 2>&1; then iptables -S 2>&1 | head -80 || true; else echo IPTABLES_NOT_INSTALLED; fi", sudo=True).replace("\n", " | "))
     print("PUBLIC_HOST_SMOKE=" + run("/usr/bin/curl -k -sS -o /dev/null -w '%{http_code} %{url_effective}' --max-time 10 -H 'Host: mychangliapp.cn' https://127.0.0.1/ || true", sudo=True))
+
+
+def enable_http(run) -> None:
+    created_final = False
+    created_link = False
+    try:
+        run(f"/usr/bin/test -f {shlex.quote(PENDING_NGINX)}")
+        final_state = run(f"if test -e {shlex.quote(FINAL_NGINX)} || test -L {shlex.quote(FINAL_NGINX)}; then echo PRESENT; else echo ABSENT; fi", sudo=True)
+        if final_state != "ABSENT":
+            raise RuntimeError(f"Refusing to overwrite existing Nginx config: {FINAL_NGINX}")
+        link_state = run(f"if test -e {shlex.quote(ENABLED_NGINX)} || test -L {shlex.quote(ENABLED_NGINX)}; then readlink -f {shlex.quote(ENABLED_NGINX)} || echo PRESENT; else echo ABSENT; fi", sudo=True)
+        if link_state != "ABSENT":
+            raise RuntimeError(f"Refusing to overwrite existing Nginx link: {ENABLED_NGINX} -> {link_state}")
+        run("/usr/sbin/nginx -t", sudo=True)
+        run(f"/usr/bin/install -o root -g root -m 0644 {shlex.quote(PENDING_NGINX)} {shlex.quote(FINAL_NGINX)}", sudo=True)
+        created_final = True
+        run(f"/usr/bin/ln -s {shlex.quote(FINAL_NGINX)} {shlex.quote(ENABLED_NGINX)}", sudo=True)
+        created_link = True
+        run("/usr/sbin/nginx -t", sudo=True)
+        run("/usr/bin/systemctl reload nginx", sudo=True)
+        home = run("/usr/bin/curl -sS -o /dev/null -w '%{http_code} %{url_effective}' --max-time 10 -H 'Host: templates.mychangliapp.cn' http://127.0.0.1/", sudo=True)
+        demo = run("/usr/bin/curl -sS -o /dev/null -w '%{http_code} %{url_effective}' --max-time 10 -H 'Host: templates.mychangliapp.cn' http://127.0.0.1/demo/mp-001/", sudo=True)
+        print("HTTP_ENABLE=PASS")
+        print("GALLERY_ENABLED=" + ENABLED_NGINX)
+        print("HTTP_LOCAL_HOME=" + home)
+        print("HTTP_LOCAL_DEMO=" + demo)
+        print("HTTPS_STATUS=WAITING_FOR_DNS_AND_CERTIFICATE")
+    except Exception:
+        if created_link:
+            try:
+                run(f"/bin/rm -f -- {shlex.quote(ENABLED_NGINX)}", sudo=True)
+            except Exception:
+                pass
+        if created_final:
+            try:
+                run(f"/bin/rm -f -- {shlex.quote(FINAL_NGINX)}", sudo=True)
+            except Exception:
+                pass
+        raise
 
 
 def deploy(run, client, files: list[tuple[Path, str]]) -> None:

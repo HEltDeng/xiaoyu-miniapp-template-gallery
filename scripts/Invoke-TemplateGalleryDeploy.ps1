@@ -2,7 +2,7 @@
 
 [CmdletBinding()]
 param(
-    [ValidateSet("Inspect", "DeployStatic")]
+    [ValidateSet("Inspect", "DeployStatic", "EnableHttp")]
     [string]$Action = "Inspect",
     [string]$DistPath = "",
     [string]$RuntimeRoot = "D:\Codex\01_App-应用开发\001_MyChangLi-我的长理\00_Project-项目说明\Local-Automation\runtime\backend-password-runtime"
