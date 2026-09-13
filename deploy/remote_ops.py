@@ -129,7 +129,7 @@ def main() -> int:
     dist = Path(os.environ.pop("MY_CHANGLI_GALLERY_DIST", "")).resolve()
     cert_path = Path(os.environ.pop("MY_CHANGLI_GALLERY_CERT", "")).resolve()
     key_path = Path(os.environ.pop("MY_CHANGLI_GALLERY_KEY", "")).resolve()
-    files = local_files(dist) if action == "deploystatic" else []
+    files = local_files(dist) if action in {"deploystatic", "updatestatic"} else []
 
     client = paramiko.SSHClient()
     client.load_system_host_keys()
@@ -172,6 +172,9 @@ def main() -> int:
             return 0
         if action == "deployhttps":
             deploy_https(run, client, cert_path, key_path)
+            return 0
+        if action == "updatestatic":
+            update_static(run, client, files)
             return 0
         if action != "deploystatic":
             raise RuntimeError("Unsupported Gallery action")
@@ -410,6 +413,95 @@ def deploy_https(run, client, cert_path: Path, key_path: Path) -> None:
                 run("/usr/bin/systemctl reload nginx", sudo=True)
             except Exception as rollback_error:  # noqa: BLE001
                 print(f"HTTPS rollback failed: {rollback_error}", file=sys.stderr)
+        raise
+    finally:
+        try:
+            run(f"/bin/rm -rf -- {shlex.quote(remote_upload)}")
+        except Exception:
+            pass
+
+
+def update_static(run, client, files: list[tuple[Path, str]]) -> None:
+    """Safely overlay a rebuilt static site onto the existing Gallery root."""
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    remote_upload = f"/tmp/xiaoyu-template-gallery-update-{timestamp}-{uuid4().hex[:8]}"
+    backup_dir = f"{BACKUP_PARENT}/template-gallery-static-{timestamp}-{uuid4().hex[:8]}"
+    copied = False
+    try:
+        existing = run(
+            f"if test -f {shlex.quote(TARGET_ROOT + '/index.html')}; then echo PRESENT; else echo ABSENT; fi",
+            sudo=True,
+        )
+        if existing != "PRESENT":
+            raise RuntimeError(f"Existing Gallery root is missing or incomplete: {TARGET_ROOT}")
+        run(f"/usr/bin/mkdir -p {shlex.quote(remote_upload)}")
+        manifest_lines: list[str] = []
+        sftp = client.open_sftp()
+        try:
+            created_dirs = {""}
+            for local_path, relative in files:
+                parent = PurePosixPath(relative).parent
+                current = ""
+                for part in parent.parts:
+                    if part == ".":
+                        continue
+                    current = f"{current}/{part}" if current else part
+                    if current not in created_dirs:
+                        sftp.mkdir(f"{remote_upload}/{current}")
+                        created_dirs.add(current)
+                sftp.put(str(local_path), f"{remote_upload}/{relative}")
+                manifest_lines.append(f"{sha256_file(local_path)}  {relative}")
+            with sftp.file(f"{remote_upload}/.deployment-manifest.sha256", "w") as manifest:
+                manifest.write("\n".join(manifest_lines) + "\n")
+        finally:
+            sftp.close()
+
+        run(f"cd {shlex.quote(remote_upload)} && /usr/bin/sha256sum -c .deployment-manifest.sha256 >/dev/null")
+        run(
+            f"/usr/bin/mkdir -p {shlex.quote(backup_dir)} && "
+            f"/bin/cp -a {shlex.quote(TARGET_ROOT)}/. {shlex.quote(backup_dir)}/",
+            sudo=True,
+            timeout=300,
+        )
+        run(
+            f"/bin/cp -a {shlex.quote(remote_upload)}/. {shlex.quote(TARGET_ROOT)}/ && "
+            f"/bin/chmod -R u=rwX,go=rX {shlex.quote(TARGET_ROOT)}",
+            sudo=True,
+            timeout=300,
+        )
+        copied = True
+        run(
+            f"/usr/bin/test -f {shlex.quote(TARGET_ROOT + '/index.html')} && "
+            f"/usr/bin/test -f {shlex.quote(TARGET_ROOT + '/demo/mp-001/manifest.json')}",
+            sudo=True,
+        )
+        run("/usr/sbin/nginx -t", sudo=True)
+        public_private = run(
+            f"/usr/bin/find {shlex.quote(TARGET_ROOT)} -type f "
+            f"\\( -name '*.key' -o -name '*.pem' -o -name '*.crt' -o -iname '*private*' \\) -print",
+            sudo=True,
+        )
+        if public_private:
+            raise RuntimeError(f"Private-looking files found in public root: {public_private}")
+        print("STATIC_UPDATE=PASS")
+        print(f"STATIC_ROOT={TARGET_ROOT}")
+        print(f"BACKUP_DIR={backup_dir}")
+        print(f"FILES={len(files)}")
+        print("NGINX_CONFIG=UNCHANGED")
+        print("PUBLIC_ROOT_PRIVATE_FILES=NONE")
+    except Exception:
+        if copied:
+            try:
+                run(
+                    f"/bin/rm -rf -- {shlex.quote(TARGET_ROOT)} && "
+                    f"/usr/bin/mkdir -p {shlex.quote(TARGET_ROOT)} && "
+                    f"/bin/cp -a {shlex.quote(backup_dir)}/. {shlex.quote(TARGET_ROOT)}/",
+                    sudo=True,
+                    timeout=300,
+                )
+                run("/usr/sbin/nginx -t", sudo=True)
+            except Exception as rollback_error:  # noqa: BLE001
+                print(f"Static update rollback failed: {rollback_error}", file=sys.stderr)
         raise
     finally:
         try:

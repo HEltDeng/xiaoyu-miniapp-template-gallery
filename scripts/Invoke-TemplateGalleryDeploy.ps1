@@ -2,7 +2,7 @@
 
 [CmdletBinding()]
 param(
-    [ValidateSet("Inspect", "DeployStatic", "EnableHttp", "DeployHttps")]
+    [ValidateSet("Inspect", "DeployStatic", "UpdateStatic", "EnableHttp", "DeployHttps")]
     [string]$Action = "Inspect",
     [string]$DistPath = "",
     [string]$CertificatePath = "",
@@ -21,7 +21,7 @@ foreach ($propertyName in @("HostName", "Port", "UserName", "IdentityFile", "Key
     if (-not $record.PSObject.Properties[$propertyName]) { throw "Credential record is missing '$propertyName'." }
 }
 if (-not (Test-Path -LiteralPath ([string]$record.IdentityFile) -PathType Leaf)) { throw "SSH identity file is missing." }
-if (-not (Test-Path -LiteralPath $DistPath -PathType Container) -and $Action -eq "DeployStatic") { throw "Gallery dist directory is missing." }
+if (-not (Test-Path -LiteralPath $DistPath -PathType Container) -and $Action -in @("DeployStatic", "UpdateStatic")) { throw "Gallery dist directory is missing." }
 if ($Action -eq "DeployHttps") {
     if (-not (Test-Path -LiteralPath $CertificatePath -PathType Leaf)) { throw "Certificate file is missing." }
     if (-not (Test-Path -LiteralPath $PrivateKeyPath -PathType Leaf)) { throw "Private key file is missing." }
