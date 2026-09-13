@@ -150,6 +150,7 @@ def inspect(run) -> None:
     print("TARGET_ROOT=" + run(f"if test -d {shlex.quote(TARGET_ROOT)}; then stat -c '%A %U:%G %n' {shlex.quote(TARGET_ROOT)}; else echo MISSING; fi", sudo=True))
     print("NGINX_STATUS=" + run("/usr/bin/systemctl is-active nginx; /usr/bin/ss -ltn 2>/dev/null | grep -E ':(80|443|8787) ' || true", sudo=True).replace("\n", " | "))
     print("PENDING_CONFIG=" + run(f"if test -f {shlex.quote(PENDING_NGINX)}; then echo PRESENT; else echo ABSENT; fi", sudo=True))
+    print("PENDING_ENABLED=" + run("if test -L /etc/nginx/sites-enabled/templates-mychangliapp.pending; then readlink -f /etc/nginx/sites-enabled/templates-mychangliapp.pending; else echo ABSENT; fi", sudo=True))
     print("PUBLIC_HOST_SMOKE=" + run("/usr/bin/curl -k -sS -o /dev/null -w '%{http_code} %{url_effective}' --max-time 10 -H 'Host: mychangliapp.cn' https://127.0.0.1/ || true", sudo=True))
 
 
