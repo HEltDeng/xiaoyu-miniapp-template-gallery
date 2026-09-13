@@ -365,9 +365,15 @@ def deploy_https(run, client, cert_path: Path, key_path: Path) -> None:
         run("/usr/sbin/nginx -t", sudo=True)
         run("/usr/bin/systemctl reload nginx", sudo=True)
 
-        home = run("/usr/bin/curl -k -sS --resolve templates.mychangliapp.cn:443:127.0.0.1 -o /dev/null -w '%{http_code} %{url_effective}' --max-time 15 https://templates.mychangliapp.cn/")
-        demo = run("/usr/bin/curl -k -sS --resolve templates.mychangliapp.cn:443:127.0.0.1 -o /dev/null -w '%{http_code} %{url_effective}' --max-time 15 https://templates.mychangliapp.cn/demo/mp-001/")
-        redirect = run("/usr/bin/curl -sS --resolve templates.mychangliapp.cn:80:127.0.0.1 -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 15 http://templates.mychangliapp.cn/")
+        home = run("/usr/bin/curl --noproxy '*' -k -sS --resolve templates.mychangliapp.cn:443:127.0.0.1 -o /dev/null -w '%{http_code} %{url_effective}' --max-time 15 https://templates.mychangliapp.cn/")
+        demo = run("/usr/bin/curl --noproxy '*' -k -sS --resolve templates.mychangliapp.cn:443:127.0.0.1 -o /dev/null -w '%{http_code} %{url_effective}' --max-time 15 https://templates.mychangliapp.cn/demo/mp-001/")
+        redirect = run("/usr/bin/curl --noproxy '*' -sS --resolve templates.mychangliapp.cn:80:127.0.0.1 -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 15 http://templates.mychangliapp.cn/")
+        if not home.startswith("200 "):
+            raise RuntimeError(f"HTTPS homepage smoke failed: {home}")
+        if not demo.startswith("200 "):
+            raise RuntimeError(f"HTTPS MP-001 smoke failed: {demo}")
+        if not redirect.startswith("301 ") or "https://templates.mychangliapp.cn/" not in redirect:
+            raise RuntimeError(f"HTTP redirect smoke failed: {redirect}")
         public_private = run(f"/usr/bin/find {shlex.quote(TARGET_ROOT)} -type f \( -name '*.key' -o -name '*.pem' -o -iname '*private*' \) -print", sudo=True)
         if public_private:
             raise RuntimeError(f"Private-looking files found in public root: {public_private}")
