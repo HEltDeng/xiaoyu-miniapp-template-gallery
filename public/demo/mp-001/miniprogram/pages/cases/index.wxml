@@ -1,0 +1,19 @@
+<view class="page"
+  ><view wx:if="{{mode === 'MOCK'}}" class="banner-note"
+    >本地演示 · 预约仅保存在本机，不会发送给商家</view
+  ><view wx:if="{{loading}}" class="empty">正在加载…</view
+  ><view wx:if="{{error}}" class="error"
+    >{{error}}<button class="link" bindtap="retry">重试</button></view
+  ><view class="eyebrow">SELECTED STORIES</view
+  ><view class="title">生活的另一种可能</view
+  ><view class="muted">以下为原创场景示意，非真实客户业绩。</view
+  ><view class="section"
+    ><view class="card" wx:for="{{cases}}" wx:key="id"
+      ><image class="case-image" src="{{item.image}}" mode="aspectFill" /><view
+        class="heading"
+        >{{item.title}}</view
+      ><text class="badge">{{item.subtitle}}</text
+      ><view>{{item.description}}</view></view
+    ></view
+  ></view
+>

@@ -1,0 +1,14 @@
+{
+  "name": "xiaoyu-miniapp-template-gallery",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "小程序模板交互体验中心：静态 Gallery 与可交互 MP-001 Demo。",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "node scripts/server.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "node scripts/check.mjs",
+    "security-scan": "node scripts/security-scan.mjs"
+  }
+}

@@ -1,0 +1,101 @@
+<view class="page"
+  ><view wx:if="{{mode === 'MOCK'}}" class="banner-note"
+    >本地演示 · 预约仅保存在本机，不会发送给商家</view
+  ><view wx:if="{{loading}}" class="empty">正在加载…</view
+  ><view wx:if="{{error}}" class="error"
+    >{{error}}<button class="link" bindtap="retry">重试</button></view
+  ><view class="row"
+    ><view class="brand"
+      ><image src="{{config.logo}}" />{{config.shortName}}</view
+    ><button
+      wx:if="{{features.search}}"
+      class="link"
+      data-page="search"
+      bindtap="nav"
+    >
+      搜索 ⌕
+    </button></view
+  ><view class="section hero"
+    ><swiper autoplay circular indicator-dots
+      ><swiper-item wx:for="{{banners}}" wx:key="id"
+        ><image src="{{item.image}}" mode="aspectFill" /><view class="hero-copy"
+          ><view class="eyebrow" style="color: #d6c39b">A LITTLE MORE LIFE</view
+          ><view class="title">{{item.title}}</view
+          ><view class="muted">{{item.subtitle}}</view></view
+        ></swiper-item
+      ></swiper
+    ></view
+  ><view wx:if="{{features.category}}" class="section"
+    ><view class="row"
+      ><view class="heading">从这里，找到所需</view
+      ><button class="link" data-page="category" bindtap="nav">
+        全部 ↗
+      </button></view
+    ><view class="grid"
+      ><view
+        class="category"
+        wx:for="{{categories}}"
+        wx:key="id"
+        data-page="service"
+        data-id="{{item.id}}"
+        bindtap="nav"
+        ><text class="symbol">◇</text>{{item.title}}</view
+      ></view
+    ></view
+  ><view wx:if="{{features.service}}" class="section"
+    ><view class="eyebrow">CURATED FOR YOU</view
+    ><view class="heading">值得托付的日常</view
+    ><view
+      class="card service"
+      wx:for="{{services}}"
+      wx:key="id"
+      data-page="detail"
+      data-id="{{item.id}}"
+      bindtap="nav"
+      ><image src="{{item.image}}" mode="aspectFill" /><view
+        class="service-body"
+        ><view class="row"
+          ><text class="badge">{{item.badge}}</text
+          ><text class="muted">{{item.duration}}</text></view
+        ><view class="service-title">{{item.title}}</view
+        ><view class="muted">{{item.subtitle}}</view
+        ><view class="row"
+          ><text class="price"
+            >¥{{item.price}}<text class="muted"> 起</text></text
+          ><text class="link">了解服务 ↗</text></view
+        ></view
+      ></view
+    ></view
+  ><view wx:if="{{features.case}}" class="section"
+    ><view class="row"
+      ><view class="heading">让改变，看得见</view
+      ><button class="link" data-page="case" bindtap="nav">
+        全部案例 ↗
+      </button></view
+    ><view
+      wx:for="{{cases}}"
+      wx:key="id"
+      class="card"
+      data-page="case"
+      bindtap="nav"
+      ><image class="case-image" src="{{item.image}}" mode="aspectFill" /><view
+        class="service-title"
+        >{{item.title}}</view
+      ><view class="muted">{{item.subtitle}}</view></view
+    ></view
+  ><view class="section card"
+    ><view class="eyebrow">OUR PROMISE</view
+    ><view class="heading">每一个细节，都被认真对待</view
+    ><view class="list-link">01　清晰报价，服务前确认范围</view
+    ><view class="list-link">02　预约沟通，尊重您的时间</view
+    ><view class="list-link">03　服务反馈，让体验持续改进</view
+    ><button
+      wx:if="{{features.booking}}"
+      class="primary"
+      data-page="booking"
+      bindtap="nav"
+    >
+      预约你的美好日常 ↗</button
+    ><button class="secondary" bindtap="contact">联系商家</button></view
+  ><view class="footer">{{config.copyright}} · 原创演示品牌</view></view
+>

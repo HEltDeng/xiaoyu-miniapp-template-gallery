@@ -1,0 +1,55 @@
+{
+  "pages": [
+    "pages/home/index",
+    "pages/category/index",
+    "pages/search/index",
+    "pages/services/index",
+    "pages/detail/index",
+    "pages/cases/index",
+    "pages/booking/index",
+    "pages/records/index",
+    "pages/feedback/index",
+    "pages/profile/index",
+    "pages/settings/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "栖间",
+    "navigationBarBackgroundColor": "#f6f5f0",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f6f5f0"
+  },
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
+  "sitemapLocation": "sitemap.json",
+  "tabBar": {
+    "color": "#72766f",
+    "selectedColor": "#286454",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "首页",
+        "iconPath": "assets/nav-home.png",
+        "selectedIconPath": "assets/nav-home-active.png"
+      },
+      {
+        "pagePath": "pages/services/index",
+        "text": "服务",
+        "iconPath": "assets/nav-service.png",
+        "selectedIconPath": "assets/nav-service-active.png"
+      },
+      {
+        "pagePath": "pages/booking/index",
+        "text": "预约",
+        "iconPath": "assets/nav-booking.png",
+        "selectedIconPath": "assets/nav-booking-active.png"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的",
+        "iconPath": "assets/nav-profile.png",
+        "selectedIconPath": "assets/nav-profile-active.png"
+      }
+    ]
+  }
+}

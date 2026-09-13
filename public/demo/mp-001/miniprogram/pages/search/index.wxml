@@ -1,0 +1,34 @@
+<view class="page"
+  ><view wx:if="{{mode === 'MOCK'}}" class="banner-note"
+    >本地演示 · 预约仅保存在本机，不会发送给商家</view
+  ><view wx:if="{{loading}}" class="empty">正在加载…</view
+  ><view wx:if="{{error}}" class="error"
+    >{{error}}<button class="link" bindtap="retry">重试</button></view
+  ><view class="title">发现所需</view
+  ><input
+    class="input"
+    placeholder="搜索服务名称或关键词"
+    bindinput="search"
+    maxlength="60"
+  /><view
+    class="card service"
+    wx:for="{{services}}"
+    wx:key="id"
+    data-page="detail"
+    data-id="{{item.id}}"
+    bindtap="nav"
+    ><image src="{{item.image}}" mode="aspectFill" /><view class="service-body"
+      ><view class="row"
+        ><text class="badge">{{item.badge}}</text
+        ><text class="muted">{{item.duration}}</text></view
+      ><view class="service-title">{{item.title}}</view
+      ><view class="muted">{{item.subtitle}}</view
+      ><view class="row"
+        ><text class="price">¥{{item.price}}<text class="muted"> 起</text></text
+        ><text class="link">了解服务 ↗</text></view
+      ></view
+    ></view
+  ><view wx:if="{{!loading &amp;&amp; !services.length}}" class="empty"
+    >没有找到匹配服务，换个关键词试试。</view
+  ></view
+>

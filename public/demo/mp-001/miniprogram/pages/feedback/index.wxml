@@ -1,0 +1,41 @@
+<view class="page"
+  ><view wx:if="{{mode === 'MOCK'}}" class="banner-note"
+    >本地演示 · 预约仅保存在本机，不会发送给商家</view
+  ><view wx:if="{{loading}}" class="empty">正在加载…</view
+  ><view wx:if="{{error}}" class="error"
+    >{{error}}<button class="link" bindtap="retry">重试</button></view
+  ><view class="eyebrow">WE ARE LISTENING</view
+  ><view class="title">每一条建议，都有意义</view
+  ><view class="muted">此页面为反馈表单，不提供实时消息或订阅通知。</view>
+  <form class="section card" bindsubmit="submit">
+    <textarea
+      class="input textarea"
+      name="message"
+      value="{{message}}"
+      maxlength="1000"
+      placeholder="请描述您的建议或遇到的问题（请勿填写敏感资料）"
+    /><checkbox-group bindchange="consent"
+      ><label class="privacy"
+        ><checkbox
+          value="yes"
+          color="{{config.primaryColor}}"
+        />同意为处理反馈保存所填内容</label
+      ></checkbox-group
+    ><button class="link" bindtap="privacy">阅读隐私说明</button
+    ><button
+      class="primary"
+      form-type="submit"
+      loading="{{loading}}"
+      disabled="{{loading}}"
+    >
+      提交反馈
+    </button>
+  </form>
+  <view wx:if="{{mode === 'CLOUDBASE'}}" class="card"
+    ><view class="heading">文件上传测试</view
+    ><view class="muted"
+      >独立验证云存储能力，文件暂不关联反馈。仅选择非敏感测试图片。</view
+    ><button class="secondary" bindtap="upload">选择并上传图片</button
+    ><view wx:if="{{uploaded}}" class="success">上传完成</view></view
+  ></view
+>

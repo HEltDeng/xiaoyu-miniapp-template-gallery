@@ -1,0 +1,62 @@
+[
+  {
+    "id": "mp-001",
+    "title": "栖间 · 生活服务",
+    "shortTitle": "栖间生活服务",
+    "status": "available",
+    "statusLabel": "正式模板",
+    "previewUrl": "/demo/mp-001/",
+    "detailUrl": "/templates/mp-001/",
+    "description": "以生活服务为核心的预约型小程序母版，适合空间整理、居家养护、咨询服务等场景。",
+    "useCases": ["生活服务", "家政预约", "空间整理"],
+    "features": ["服务目录", "预约流程", "记录与反馈"],
+    "demoNote": "Mock 演示模式：预约仅保存在当前浏览器，不会产生真实订单或通知。",
+    "source": "闲鱼小程序定制工厂母版 / config/client.json",
+    "accent": "mint"
+  },
+  {
+    "id": "mp-002",
+    "title": "下一套模板",
+    "shortTitle": "MP-002",
+    "status": "coming",
+    "statusLabel": "即将上线",
+    "previewUrl": "",
+    "detailUrl": "/templates/mp-002/",
+    "description": "新的可交互模板正在整理中。",
+    "useCases": [],
+    "features": [],
+    "demoNote": "",
+    "source": "",
+    "accent": "sky"
+  },
+  {
+    "id": "mp-003",
+    "title": "更多产品形态",
+    "shortTitle": "MP-003",
+    "status": "coming",
+    "statusLabel": "即将上线",
+    "previewUrl": "",
+    "detailUrl": "/templates/mp-003/",
+    "description": "模板库会继续增加新的业务形态。",
+    "useCases": [],
+    "features": [],
+    "demoNote": "",
+    "source": "",
+    "accent": "lavender"
+  },
+  {
+    "id": "mp-004",
+    "title": "持续更新",
+    "shortTitle": "MP-004",
+    "status": "coming",
+    "statusLabel": "即将上线",
+    "previewUrl": "",
+    "detailUrl": "/templates/mp-004/",
+    "description": "更多模板会在完成真实交互验收后加入。",
+    "useCases": [],
+    "features": [],
+    "demoNote": "",
+    "source": "",
+    "accent": "orange"
+  }
+]

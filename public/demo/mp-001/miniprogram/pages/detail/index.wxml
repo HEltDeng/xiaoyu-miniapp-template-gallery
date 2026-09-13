@@ -1,0 +1,29 @@
+<view class="page"
+  ><view wx:if="{{mode === 'MOCK'}}" class="banner-note"
+    >本地演示 · 预约仅保存在本机，不会发送给商家</view
+  ><view wx:if="{{loading}}" class="empty">正在加载…</view
+  ><view wx:if="{{error}}" class="error"
+    >{{error}}<button class="link" bindtap="retry">重试</button></view
+  ><view wx:if="{{item}}"
+    ><image
+      class="case-image"
+      style="height: 440rpx"
+      src="{{item.image}}"
+      mode="aspectFill"
+    /><text class="badge">{{item.badge}}</text
+    ><view class="title">{{item.title}}</view
+    ><view class="muted">{{item.subtitle}}</view
+    ><view class="row"
+      ><text class="price">¥{{item.price}} 起</text
+      ><text>{{item.duration}}</text></view
+    ><view class="section card"
+      ><view class="heading">服务介绍</view><view>{{item.description}}</view
+      ><view class="divider" /><view class="muted"
+        >流程：选择服务 → 提交意向 → 商家确认 → 到店 /
+        上门服务。预约不代表档期已锁定。</view
+      ></view
+    ><button wx:if="{{features.booking}}" class="primary" bindtap="book">
+      预约此项服务</button
+    ><button class="secondary" bindtap="contact">咨询商家</button></view
+  ></view
+>

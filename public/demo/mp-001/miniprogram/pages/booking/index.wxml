@@ -1,0 +1,65 @@
+<view class="page"
+  ><view wx:if="{{mode === 'MOCK'}}" class="banner-note"
+    >本地演示 · 预约仅保存在本机，不会发送给商家</view
+  ><view wx:if="{{loading}}" class="empty">正在加载…</view
+  ><view wx:if="{{error}}" class="error"
+    >{{error}}<button class="link" bindtap="retry">重试</button></view
+  ><view class="eyebrow">MAKE AN APPOINTMENT</view
+  ><view class="title">为生活，留一点时间</view
+  ><view class="muted">提交预约意向，档期由商家进一步确认。</view
+  ><button class="link" data-page="records" bindtap="nav">
+    查看我的预约 →
+  </button>
+  <form bindsubmit="submit" class="section card">
+    <view class="label">选择服务</view
+    ><picker
+      range="{{services}}"
+      range-key="title"
+      value="{{serviceIndex}}"
+      bindchange="changeService"
+      ><view class="input"
+        >{{services[serviceIndex].title || '暂无服务'}} ▾</view
+      ></picker
+    ><view class="label">预约日期</view
+    ><picker mode="date" start="{{today}}" bindchange="date"
+      ><view class="input">{{date || '请选择日期'}} ▾</view></picker
+    ><view class="label">意向时间</view
+    ><picker range="{{times}}" value="{{timeIndex}}" bindchange="time"
+      ><view class="input">{{times[timeIndex]}} ▾</view></picker
+    ><view class="label">如何称呼您</view
+    ><input
+      class="input"
+      name="name"
+      maxlength="40"
+      placeholder="您的称呼"
+    /><view class="label">联系电话</view
+    ><input
+      class="input"
+      name="phone"
+      type="number"
+      maxlength="11"
+      placeholder="用于本次预约联系"
+    /><view class="label">备注（选填）</view
+    ><textarea
+      class="input textarea"
+      name="note"
+      maxlength="300"
+      placeholder="告诉我们您的服务需求"
+    /><checkbox-group bindchange="consent"
+      ><label class="privacy"
+        ><checkbox
+          value="yes"
+          color="{{config.primaryColor}}"
+        />我已阅读隐私说明，同意为本次预约处理称呼、电话和预约信息。</label
+      ></checkbox-group
+    ><button class="link" bindtap="privacy">阅读设置与隐私</button
+    ><button
+      class="primary"
+      form-type="submit"
+      loading="{{loading}}"
+      disabled="{{loading || !services.length}}"
+    >
+      提交预约意向
+    </button>
+  </form></view
+>

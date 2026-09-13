@@ -1,0 +1,49 @@
+<view class="page"
+  ><view wx:if="{{mode === 'MOCK'}}" class="banner-note"
+    >本地演示 · 预约仅保存在本机，不会发送给商家</view
+  ><view wx:if="{{loading}}" class="empty">正在加载…</view
+  ><view wx:if="{{error}}" class="error"
+    >{{error}}<button class="link" bindtap="retry">重试</button></view
+  ><view class="eyebrow">OUR SERVICES</view
+  ><view class="title">专业服务，从容生活</view
+  ><view class="muted">每一份托付，我们都认真回应。</view
+  ><button
+    wx:if="{{features.search}}"
+    class="secondary"
+    data-page="search"
+    bindtap="nav"
+  >
+    搜索你需要的服务 ⌕</button
+  ><view wx:if="{{features.category}}" class="chips"
+    ><view class="chip {{!selected?'active':''}}" data-id="" bindtap="filter"
+      >全部</view
+    ><view
+      class="chip {{selected===item.id?'active':''}}"
+      wx:for="{{categories}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="filter"
+      >{{item.title}}</view
+    ></view
+  ><view
+    class="card service"
+    wx:for="{{services}}"
+    wx:key="id"
+    data-page="detail"
+    data-id="{{item.id}}"
+    bindtap="nav"
+    ><image src="{{item.image}}" mode="aspectFill" /><view class="service-body"
+      ><view class="row"
+        ><text class="badge">{{item.badge}}</text
+        ><text class="muted">{{item.duration}}</text></view
+      ><view class="service-title">{{item.title}}</view
+      ><view class="muted">{{item.subtitle}}</view
+      ><view class="row"
+        ><text class="price">¥{{item.price}}<text class="muted"> 起</text></text
+        ><text class="link">了解服务 ↗</text></view
+      ></view
+    ></view
+  ><view wx:if="{{!loading &amp;&amp; !services.length}}" class="empty"
+    >当前分类暂无服务</view
+  ></view
+>

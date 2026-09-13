@@ -1,0 +1,30 @@
+<view class="page"
+  ><view wx:if="{{mode === 'MOCK'}}" class="banner-note"
+    >本地演示 · 预约仅保存在本机，不会发送给商家</view
+  ><view wx:if="{{loading}}" class="empty">正在加载…</view
+  ><view wx:if="{{error}}" class="error"
+    >{{error}}<button class="link" bindtap="retry">重试</button></view
+  ><view class="title">我的预约</view
+  ><view wx:if="{{!loading &amp;&amp; !records.length}}" class="empty"
+    >还没有预约，给生活安排一点美好。<button
+      class="primary"
+      data-page="booking"
+      bindtap="nav"
+    >
+      去预约
+    </button></view
+  ><view class="card" wx:for="{{records}}" wx:key="id"
+    ><text class="badge">{{item.status}}</text
+    ><view class="heading">{{item.serviceTitle}}</view
+    ><view>{{item.date}}　{{item.time}}</view
+    ><view class="muted">{{item.name}} · {{item.phone}}</view
+    ><button
+      wx:if="{{item.status !== '已取消' &amp;&amp; item.status !== '已完成'}}"
+      class="secondary"
+      data-id="{{item.id}}"
+      bindtap="cancel"
+    >
+      取消预约
+    </button></view
+  ></view
+>

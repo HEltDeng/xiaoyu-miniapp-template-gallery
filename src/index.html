@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="小程序模板交互体验中心：在线体验真实可操作的小程序模板。" />
+    <title>小宇模板中心 · 小程序定制，从成熟模板开始</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="小宇模板中心首页">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span>小宇模板中心</span>
+      </a>
+      <nav class="desktop-nav" aria-label="主导航">
+        <a href="#templates">模板中心</a>
+        <a href="#process">定制流程</a>
+        <a href="#about">关于我们</a>
+      </nav>
+      <a class="header-action" href="#live-demo">直接体验 <span aria-hidden="true">↗</span></a>
+    </header>
+
+    <main>
+      <section class="hero section-shell" id="live-demo">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="eyebrow-dot"></span> XIAOYU / TEMPLATE GALLERY</p>
+          <h1>小程序定制，<br /><em>从成熟模板开始</em></h1>
+          <p class="hero-description">可直接在线体验的小程序模板，选择你喜欢的产品形态，再根据你的业务进行个性化开发。</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#templates">浏览模板 <span aria-hidden="true">↓</span></a>
+            <a class="button button-secondary" href="#live-demo">在线体验 <span aria-hidden="true">↗</span></a>
+          </div>
+          <div class="hero-meta" aria-label="平台信息">
+            <span>真实交互 Demo</span><span class="meta-divider"></span><span>390 × 844 标准视口</span>
+          </div>
+        </div>
+
+        <div class="hero-demo">
+          <div class="demo-heading">
+            <div>
+              <p class="demo-kicker">MP-001 / LIVE DEMO</p>
+              <h2 id="hero-demo-title">栖间 · 生活服务</h2>
+            </div>
+            <span class="demo-status"><span></span> 可操作</span>
+          </div>
+          <div class="device-stage" data-device-stage>
+            <div class="device-shell" data-device-shell>
+              <div class="device-topbar"><span class="device-camera"></span><span>小程序预览</span><span class="device-menu">•••</span></div>
+              <iframe class="device-iframe" src="/demo/mp-001/" title="MP-001 栖间生活服务真实可交互 Demo" loading="eager"></iframe>
+            </div>
+          </div>
+          <div class="demo-caption"><span>演示模式</span><span>预约不会产生真实业务影响</span></div>
+        </div>
+      </section>
+
+      <section class="template-section section-shell" id="templates">
+        <div class="section-intro">
+          <div>
+            <p class="eyebrow">01 / TEMPLATE LIBRARY</p>
+            <h2>小程序模板</h2>
+          </div>
+          <p>每一套模板都先完成真实交互，再进入模板库。</p>
+        </div>
+        <div class="template-grid" data-template-grid aria-live="polite"></div>
+      </section>
+
+      <section class="process-section section-shell" id="process">
+        <div class="section-intro process-intro">
+          <div>
+            <p class="eyebrow">02 / FROM TEMPLATE TO PRODUCT</p>
+            <h2>先体验，再定制</h2>
+          </div>
+          <p>你不需要先读一份功能清单。点进去，看看它真实运行起来是什么样。</p>
+        </div>
+        <div class="process-grid" data-process-grid></div>
+      </section>
+
+      <section class="about-section section-shell" id="about">
+        <div class="about-card">
+          <p class="eyebrow">03 / ABOUT</p>
+          <h2>把时间用在真正重要的定制上。</h2>
+          <p>模板中心用于展示已经完成交互验证的产品母版。这里的 Demo 保持真实交互，但默认使用 Mock 数据，不连接真实订单、支付、人员通知或生产数据库。</p>
+          <a class="text-link" href="#templates">从一套模板开始 <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="about-note"><span class="note-mark">✳</span><p>每个模板都可以从品牌、页面、内容和业务规则开始继续开发。</p></div>
+      </section>
+    </main>
+
+    <footer class="site-footer section-shell"><span>小宇模板中心</span><span>独立项目 · Demo 模式</span><span>© 2026</span></footer>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

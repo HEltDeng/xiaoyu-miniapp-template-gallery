@@ -1,0 +1,17 @@
+{
+  "siteName": "小宇模板中心",
+  "domain": "templates.mychangliapp.cn",
+  "tagline": "小程序定制，从成熟模板开始",
+  "heroDescription": "可直接在线体验的小程序模板。先选产品形态，再根据你的业务做定制开发。",
+  "demoViewport": {
+    "width": 390,
+    "height": 844
+  },
+  "sections": {
+    "process": [
+      { "label": "01", "title": "先体验", "text": "在真实交互里感受页面、流程和状态。" },
+      { "label": "02", "title": "再选择", "text": "找到更接近你业务的产品形态。" },
+      { "label": "03", "title": "最后定制", "text": "围绕品牌、内容和业务规则继续开发。" }
+    ]
+  }
+}

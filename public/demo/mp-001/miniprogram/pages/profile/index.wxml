@@ -1,0 +1,38 @@
+<view class="page"
+  ><view wx:if="{{mode === 'MOCK'}}" class="banner-note"
+    >本地演示 · 预约仅保存在本机，不会发送给商家</view
+  ><view wx:if="{{loading}}" class="empty">正在加载…</view
+  ><view wx:if="{{error}}" class="error"
+    >{{error}}<button class="link" bindtap="retry">重试</button></view
+  ><view class="row section"
+    ><view
+      ><view class="eyebrow">YOUR EVERYDAY COMPANION</view
+      ><view class="title">你好，生活家</view
+      ><view class="muted"
+        >{{mode === 'MOCK' ? '本地访客 · 无需微信授权' :
+        '已通过微信身份识别'}}</view
+      ></view
+    ><image class="avatar" src="{{config.logo}}" /></view
+  ><view class="section card"
+    ><view class="heading">我的服务</view
+    ><view
+      wx:if="{{features.booking}}"
+      class="list-link row"
+      data-page="records"
+      bindtap="nav"
+      ><text>预约记录</text><text>{{count || 0}}　→</text></view
+    ><view
+      wx:if="{{features.form}}"
+      class="list-link row"
+      data-page="form"
+      bindtap="nav"
+      ><text>消息与反馈</text><text>→</text></view
+    ><view class="list-link row" bindtap="contact"
+      ><text>联系商家</text><text>→</text></view
+    ><view class="list-link row" data-page="settings" bindtap="nav"
+      ><text>设置与隐私</text><text>→</text></view
+    ></view
+  ><view class="footer"
+    >{{config.companyName}}<view>{{config.copyright}}</view></view
+  ></view
+>

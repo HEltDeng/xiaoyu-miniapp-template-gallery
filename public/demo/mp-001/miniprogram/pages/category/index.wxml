@@ -1,0 +1,20 @@
+<view class="page"
+  ><view wx:if="{{mode === 'MOCK'}}" class="banner-note"
+    >本地演示 · 预约仅保存在本机，不会发送给商家</view
+  ><view wx:if="{{loading}}" class="empty">正在加载…</view
+  ><view wx:if="{{error}}" class="error"
+    >{{error}}<button class="link" bindtap="retry">重试</button></view
+  ><view class="eyebrow">EXPLORE</view
+  ><view class="title">找到适合你的服务</view
+  ><view
+    class="card row"
+    wx:for="{{categories}}"
+    wx:key="id"
+    data-id="{{item.id}}"
+    bindtap="select"
+    ><view
+      ><view class="heading">{{item.title}}</view
+      ><view class="muted">{{item.subtitle}}</view></view
+    ><text>↗</text></view
+  ></view
+>

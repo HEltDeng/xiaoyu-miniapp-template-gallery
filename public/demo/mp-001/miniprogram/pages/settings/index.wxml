@@ -1,0 +1,26 @@
+<view class="page"
+  ><view wx:if="{{mode === 'MOCK'}}" class="banner-note"
+    >本地演示 · 预约仅保存在本机，不会发送给商家</view
+  ><view wx:if="{{loading}}" class="empty">正在加载…</view
+  ><view wx:if="{{error}}" class="error"
+    >{{error}}<button class="link" bindtap="retry">重试</button></view
+  ><view class="title">设置与隐私</view
+  ><view class="card privacy"
+    ><view class="heading">您的数据，由您知情决定</view
+    ><view>运营者：{{config.companyName}}</view
+    ><view
+      >联系方式：{{config.contactPhone ||
+      '演示未配置，正式上线前必须填写'}}</view
+    ><view class="divider" /><view
+      >浏览服务无需提供姓名和电话。提交预约时，我们只处理称呼、联系电话、服务、时间及备注，用于联系并确认预约。</view
+    ><view class="divider" /><view
+      >本地演示：数据保存在当前设备，可以随时清除。不会发送给商家，不能用于实际接单。</view
+    ><view class="divider" /><view
+      >云端模式：预约与反馈保存至客户的独立环境，按微信身份隔离。图片上传仅在主动选择并授权后执行。正式运营者须确定保存期限、删除与访问申请流程、处理者及联系渠道，并在微信后台填写一致的隐私保护指引。</view
+    ><view class="divider" /><view
+      >本说明为母版演示，客户正式政策未配置前不可上线。我们不收集通讯录、定位、身份证或支付信息。</view
+    ></view
+  ><button wx:if="{{mode === 'MOCK'}}" class="secondary" bindtap="clear">
+    清除本客户的本地演示记录
+  </button></view
+>

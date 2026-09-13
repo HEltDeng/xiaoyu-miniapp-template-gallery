@@ -1,0 +1,104 @@
+body {
+  margin: 0;
+  background: #f6f5f0;
+  color: #23372f;
+  font-family: system-ui, "Microsoft YaHei", sans-serif;
+}
+* {
+  box-sizing: border-box;
+}
+view {
+  display: block;
+}
+text {
+  display: inline;
+}
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+button {
+  border: 0;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.55;
+}
+img {
+  object-fit: cover;
+}
+#app {
+  padding-bottom: 70px;
+}
+.preview-label {
+  position: sticky;
+  top: 0;
+  background: #e8eddf;
+  text-align: center;
+  font-size: 11px;
+  padding: 6px;
+  z-index: 10;
+  color: #66725e;
+}
+#tabs {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  background: white;
+  border-top: 1px solid #e0e5d8;
+  z-index: 10;
+  padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+}
+#tabs button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: white;
+  color: #65735f;
+  font-size: 12px;
+}
+#tabs img {
+  width: 24px;
+  height: 24px;
+}
+#tabs .active {
+  color: var(--primary);
+  font-weight: 600;
+}
+swiper {
+  display: block;
+  height: 100%;
+}
+swiper-item {
+  display: block;
+  height: 100%;
+}
+swiper-item:not(:first-child) {
+  display: none;
+}
+checkbox-group {
+  display: block;
+}
+checkbox {
+  display: inline-block;
+}
+.input {
+  height: auto;
+}
+select.input {
+  appearance: auto;
+}
+label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+}
+.hero-copy {
+  pointer-events: none;
+}
