@@ -2,9 +2,11 @@
 
 [CmdletBinding()]
 param(
-    [ValidateSet("Inspect", "DeployStatic", "EnableHttp")]
+    [ValidateSet("Inspect", "DeployStatic", "EnableHttp", "DeployHttps")]
     [string]$Action = "Inspect",
     [string]$DistPath = "",
+    [string]$CertificatePath = "",
+    [string]$PrivateKeyPath = "",
     [string]$RuntimeRoot = "D:\Codex\01_App-应用开发\001_MyChangLi-我的长理\00_Project-项目说明\Local-Automation\runtime\backend-password-runtime"
 )
 
@@ -20,6 +22,15 @@ foreach ($propertyName in @("HostName", "Port", "UserName", "IdentityFile", "Key
 }
 if (-not (Test-Path -LiteralPath ([string]$record.IdentityFile) -PathType Leaf)) { throw "SSH identity file is missing." }
 if (-not (Test-Path -LiteralPath $DistPath -PathType Container) -and $Action -eq "DeployStatic") { throw "Gallery dist directory is missing." }
+if ($Action -eq "DeployHttps") {
+    if (-not (Test-Path -LiteralPath $CertificatePath -PathType Leaf)) { throw "Certificate file is missing." }
+    if (-not (Test-Path -LiteralPath $PrivateKeyPath -PathType Leaf)) { throw "Private key file is missing." }
+    $repoRootFull = [IO.Path]::GetFullPath($repoRoot).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+    foreach ($candidate in @($CertificatePath, $PrivateKeyPath)) {
+        $candidateFull = [IO.Path]::GetFullPath((Resolve-Path -LiteralPath $candidate).Path)
+        if ($candidateFull.StartsWith($repoRootFull, [StringComparison]::OrdinalIgnoreCase)) { throw "Certificate material must not be inside the Gallery repository." }
+    }
+}
 $python = Join-Path $RuntimeRoot "venv\Scripts\python.exe"
 if (-not (Test-Path -LiteralPath $python -PathType Leaf)) { throw "Established deployment Python runtime is missing." }
 
@@ -38,7 +49,7 @@ function Convert-SecureValueToPlainText {
     throw "Credential record value is invalid."
 }
 
-$envNames = @("MY_CHANGLI_BACKEND_HOST", "MY_CHANGLI_BACKEND_PORT", "MY_CHANGLI_BACKEND_USER", "MY_CHANGLI_BACKEND_IDENTITY_FILE", "MY_CHANGLI_BACKEND_KEY_PASSPHRASE", "MY_CHANGLI_BACKEND_SUDO_PASSWORD", "MY_CHANGLI_GALLERY_ACTION", "MY_CHANGLI_GALLERY_DIST")
+$envNames = @("MY_CHANGLI_BACKEND_HOST", "MY_CHANGLI_BACKEND_PORT", "MY_CHANGLI_BACKEND_USER", "MY_CHANGLI_BACKEND_IDENTITY_FILE", "MY_CHANGLI_BACKEND_KEY_PASSPHRASE", "MY_CHANGLI_BACKEND_SUDO_PASSWORD", "MY_CHANGLI_GALLERY_ACTION", "MY_CHANGLI_GALLERY_DIST", "MY_CHANGLI_GALLERY_CERT", "MY_CHANGLI_GALLERY_KEY")
 $previous = @{}
 foreach ($name in $envNames) { $previous[$name] = [Environment]::GetEnvironmentVariable($name, "Process") }
 try {
@@ -50,6 +61,8 @@ try {
     $env:MY_CHANGLI_BACKEND_SUDO_PASSWORD = Convert-SecureValueToPlainText -Value $record.SudoPassword
     $env:MY_CHANGLI_GALLERY_ACTION = $Action.ToLowerInvariant()
     $env:MY_CHANGLI_GALLERY_DIST = (Resolve-Path $DistPath).Path
+    $env:MY_CHANGLI_GALLERY_CERT = if ($Action -eq "DeployHttps") { (Resolve-Path $CertificatePath).Path } else { "" }
+    $env:MY_CHANGLI_GALLERY_KEY = if ($Action -eq "DeployHttps") { (Resolve-Path $PrivateKeyPath).Path } else { "" }
     & $python (Join-Path $repoRoot "deploy\remote_ops.py")
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 } finally {

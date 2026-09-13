@@ -13,12 +13,17 @@ from textwrap import dedent
 from uuid import uuid4
 
 import paramiko
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
 
 
 TARGET_ROOT = "/var/www/templates-mychangliapp"
 PENDING_NGINX = "/etc/nginx/sites-available/templates-mychangliapp.pending"
 FINAL_NGINX = "/etc/nginx/sites-available/templates-mychangliapp"
 ENABLED_NGINX = "/etc/nginx/sites-enabled/templates-mychangliapp"
+CERT_DIR = "/etc/nginx/ssl/templates.mychangliapp.cn"
+REMOTE_CERT = f"{CERT_DIR}/templates.mychangliapp.cn_bundle.crt"
+REMOTE_KEY = f"{CERT_DIR}/templates.mychangliapp.cn.key"
 BACKUP_PARENT = "/var/backups/mychangli"
 
 
@@ -76,6 +81,43 @@ def pending_nginx() -> str:
     ).strip() + "\n"
 
 
+def https_nginx() -> str:
+    return dedent(
+        f"""
+        server {{
+            listen 80;
+            listen [::]:80;
+            server_name templates.mychangliapp.cn;
+            return 301 https://$host$request_uri;
+        }}
+
+        server {{
+            listen 443 ssl;
+            listen [::]:443 ssl;
+            server_name templates.mychangliapp.cn;
+
+            ssl_certificate {REMOTE_CERT};
+            ssl_certificate_key {REMOTE_KEY};
+            ssl_protocols TLSv1.2 TLSv1.3;
+
+            root {TARGET_ROOT};
+            index index.html;
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+            add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-src 'self'; frame-ancestors 'self'" always;
+
+            location /demo/ {{
+                add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval'; frame-ancestors 'self'" always;
+                try_files $uri $uri/ =404;
+            }}
+            location / {{
+                try_files $uri $uri/ =404;
+            }}
+        }}
+        """
+    ).strip() + "\n"
+
+
 def main() -> int:
     host = required("MY_CHANGLI_BACKEND_HOST")
     username = required("MY_CHANGLI_BACKEND_USER")
@@ -85,6 +127,8 @@ def main() -> int:
     port = int(os.environ.pop("MY_CHANGLI_BACKEND_PORT", "22"))
     action = required("MY_CHANGLI_GALLERY_ACTION")
     dist = Path(os.environ.pop("MY_CHANGLI_GALLERY_DIST", "")).resolve()
+    cert_path = Path(os.environ.pop("MY_CHANGLI_GALLERY_CERT", "")).resolve()
+    key_path = Path(os.environ.pop("MY_CHANGLI_GALLERY_KEY", "")).resolve()
     files = local_files(dist) if action == "deploystatic" else []
 
     client = paramiko.SSHClient()
@@ -125,6 +169,9 @@ def main() -> int:
             return 0
         if action == "enablehttp":
             enable_http(run)
+            return 0
+        if action == "deployhttps":
+            deploy_https(run, client, cert_path, key_path)
             return 0
         if action != "deploystatic":
             raise RuntimeError("Unsupported Gallery action")
@@ -207,6 +254,162 @@ def enable_http(run) -> None:
             except Exception:
                 pass
         raise
+
+
+def validate_certificate(cert_path: Path, key_path: Path) -> dict[str, str]:
+    if not cert_path.is_file() or not key_path.is_file():
+        raise RuntimeError("Certificate or private key file is missing")
+    cert_bytes = cert_path.read_bytes()
+    key_bytes = key_path.read_bytes()
+    try:
+        certificate = x509.load_pem_x509_certificate(cert_bytes)
+        private_key = serialization.load_pem_private_key(key_bytes, password=None)
+    except Exception as exc:  # noqa: BLE001
+        raise RuntimeError(f"Unable to parse certificate package: {exc}") from exc
+
+    try:
+        names = certificate.extensions.get_extension_for_class(x509.SubjectAlternativeName).value.get_values_for_type(x509.DNSName)
+    except x509.ExtensionNotFound as exc:
+        raise RuntimeError("Certificate has no Subject Alternative Name extension") from exc
+    if "templates.mychangliapp.cn" not in names:
+        raise RuntimeError(f"Certificate SAN does not include templates.mychangliapp.cn: {names}")
+
+    now = datetime.now(timezone.utc)
+    not_before = getattr(certificate, "not_valid_before_utc", None)
+    not_after = getattr(certificate, "not_valid_after_utc", None)
+    if not_before is None:
+        not_before = certificate.not_valid_before.replace(tzinfo=timezone.utc)
+    if not_after is None:
+        not_after = certificate.not_valid_after.replace(tzinfo=timezone.utc)
+    if not_before > now or not_after <= now:
+        raise RuntimeError(f"Certificate is not currently valid: {not_before.isoformat()} -> {not_after.isoformat()}")
+    if cert_bytes.count(b"-----BEGIN CERTIFICATE-----") < 2:
+        raise RuntimeError("Certificate file does not contain a complete chain bundle")
+
+    cert_public = certificate.public_key().public_bytes(
+        serialization.Encoding.DER,
+        serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    key_public = private_key.public_key().public_bytes(
+        serialization.Encoding.DER,
+        serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    cert_public_sha256 = hashlib.sha256(cert_public).hexdigest()
+    key_public_sha256 = hashlib.sha256(key_public).hexdigest()
+    if cert_public_sha256 != key_public_sha256:
+        raise RuntimeError("Certificate and private key public keys do not match")
+
+    return {
+        "subject": certificate.subject.rfc4514_string(),
+        "issuer": certificate.issuer.rfc4514_string(),
+        "not_before": not_before.isoformat(),
+        "not_after": not_after.isoformat(),
+        "certificate_sha256": hashlib.sha256(cert_bytes).hexdigest(),
+        "public_key_sha256": cert_public_sha256,
+    }
+
+
+def deploy_https(run, client, cert_path: Path, key_path: Path) -> None:
+    metadata = validate_certificate(cert_path, key_path)
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    remote_upload = f"/tmp/xiaoyu-template-gallery-ssl-{timestamp}-{uuid4().hex[:8]}"
+    backup_dir = f"{BACKUP_PARENT}/template-gallery-ssl-{timestamp}-{uuid4().hex[:8]}"
+    config_name = "templates-mychangliapp"
+    remote_config = f"{remote_upload}/{config_name}"
+    manifest_lines = [
+        f"{sha256_file(cert_path)}  templates.mychangliapp.cn_bundle.crt",
+        f"{sha256_file(key_path)}  templates.mychangliapp.cn.key",
+    ]
+    backup_created = False
+    config_written = False
+    cert_written = False
+    key_written = False
+    existing_cert = False
+    existing_key = False
+    try:
+        final_state = run(f"if test -f {shlex.quote(FINAL_NGINX)}; then echo PRESENT; else echo ABSENT; fi", sudo=True)
+        if final_state != "PRESENT":
+            raise RuntimeError(f"Expected existing HTTP config is missing: {FINAL_NGINX}")
+        link_state = run(f"if test -L {shlex.quote(ENABLED_NGINX)}; then readlink -f {shlex.quote(ENABLED_NGINX)}; else echo ABSENT; fi", sudo=True)
+        if link_state != FINAL_NGINX:
+            raise RuntimeError(f"Gallery Nginx link is not the expected independent vhost: {link_state}")
+        run(f"/usr/bin/mkdir -p {shlex.quote(remote_upload)}")
+        sftp = client.open_sftp()
+        try:
+            sftp.put(str(cert_path), f"{remote_upload}/templates.mychangliapp.cn_bundle.crt")
+            sftp.put(str(key_path), f"{remote_upload}/templates.mychangliapp.cn.key")
+            with sftp.file(f"{remote_upload}/.deployment-manifest.sha256", "w") as manifest:
+                manifest.write("\n".join(manifest_lines) + "\n")
+            with sftp.file(remote_config, "w") as config:
+                config.write(https_nginx())
+        finally:
+            sftp.close()
+
+        run(f"cd {shlex.quote(remote_upload)} && /usr/bin/sha256sum -c .deployment-manifest.sha256 >/dev/null")
+        run(f"/usr/bin/mkdir -p {shlex.quote(backup_dir)} && /bin/cp -a -- {shlex.quote(FINAL_NGINX)} {shlex.quote(backup_dir + '/' + config_name)}", sudo=True)
+        existing_cert = run(f"if test -e {shlex.quote(REMOTE_CERT)}; then echo PRESENT; else echo ABSENT; fi", sudo=True) == "PRESENT"
+        existing_key = run(f"if test -e {shlex.quote(REMOTE_KEY)}; then echo PRESENT; else echo ABSENT; fi", sudo=True) == "PRESENT"
+        if existing_cert:
+            run(f"/bin/cp -a -- {shlex.quote(REMOTE_CERT)} {shlex.quote(backup_dir + '/templates.mychangliapp.cn_bundle.crt')}", sudo=True)
+        if existing_key:
+            run(f"/bin/cp -a -- {shlex.quote(REMOTE_KEY)} {shlex.quote(backup_dir + '/templates.mychangliapp.cn.key')}", sudo=True)
+        backup_created = True
+
+        run(f"/usr/bin/install -d -o root -g root -m 0750 {shlex.quote(CERT_DIR)}", sudo=True)
+        run(f"/usr/bin/install -o root -g root -m 0644 {shlex.quote(remote_upload + '/templates.mychangliapp.cn_bundle.crt')} {shlex.quote(REMOTE_CERT)}", sudo=True)
+        cert_written = True
+        run(f"/usr/bin/install -o root -g root -m 0600 {shlex.quote(remote_upload + '/templates.mychangliapp.cn.key')} {shlex.quote(REMOTE_KEY)}", sudo=True)
+        key_written = True
+        run(f"/usr/bin/install -o root -g root -m 0644 {shlex.quote(remote_config)} {shlex.quote(FINAL_NGINX)}", sudo=True)
+        config_written = True
+        run("/usr/sbin/nginx -t", sudo=True)
+        run("/usr/bin/systemctl reload nginx", sudo=True)
+
+        home = run("/usr/bin/curl -k -sS --resolve templates.mychangliapp.cn:443:127.0.0.1 -o /dev/null -w '%{http_code} %{url_effective}' --max-time 15 https://templates.mychangliapp.cn/")
+        demo = run("/usr/bin/curl -k -sS --resolve templates.mychangliapp.cn:443:127.0.0.1 -o /dev/null -w '%{http_code} %{url_effective}' --max-time 15 https://templates.mychangliapp.cn/demo/mp-001/")
+        redirect = run("/usr/bin/curl -sS --resolve templates.mychangliapp.cn:80:127.0.0.1 -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 15 http://templates.mychangliapp.cn/")
+        public_private = run(f"/usr/bin/find {shlex.quote(TARGET_ROOT)} -type f \( -name '*.key' -o -name '*.pem' -o -iname '*private*' \) -print", sudo=True)
+        if public_private:
+            raise RuntimeError(f"Private-looking files found in public root: {public_private}")
+        print("HTTPS_DEPLOYMENT=PASS")
+        print(f"CERTIFICATE_PATH={REMOTE_CERT}")
+        print(f"PRIVATE_KEY_PATH={REMOTE_KEY}")
+        print(f"BACKUP_DIR={backup_dir}")
+        print(f"CERT_SUBJECT={metadata['subject']}")
+        print(f"CERT_ISSUER={metadata['issuer']}")
+        print(f"CERT_NOT_BEFORE={metadata['not_before']}")
+        print(f"CERT_NOT_AFTER={metadata['not_after']}")
+        print(f"CERT_SHA256={metadata['certificate_sha256']}")
+        print(f"PUBLIC_KEY_SHA256={metadata['public_key_sha256']}")
+        print(f"HTTPS_LOCAL_HOME={home}")
+        print(f"HTTPS_LOCAL_DEMO={demo}")
+        print(f"HTTP_REDIRECT={redirect}")
+        print("PUBLIC_ROOT_PRIVATE_FILES=NONE")
+    except Exception:
+        if backup_created:
+            try:
+                if config_written:
+                    run(f"/usr/bin/install -o root -g root -m 0644 {shlex.quote(backup_dir + '/' + config_name)} {shlex.quote(FINAL_NGINX)}", sudo=True)
+                if cert_written:
+                    if existing_cert:
+                        run(f"/usr/bin/install -o root -g root -m 0644 {shlex.quote(backup_dir + '/templates.mychangliapp.cn_bundle.crt')} {shlex.quote(REMOTE_CERT)}", sudo=True)
+                    else:
+                        run(f"/bin/rm -f -- {shlex.quote(REMOTE_CERT)}", sudo=True)
+                if key_written:
+                    if existing_key:
+                        run(f"/usr/bin/install -o root -g root -m 0600 {shlex.quote(backup_dir + '/templates.mychangliapp.cn.key')} {shlex.quote(REMOTE_KEY)}", sudo=True)
+                    else:
+                        run(f"/bin/rm -f -- {shlex.quote(REMOTE_KEY)}", sudo=True)
+                run("/usr/sbin/nginx -t", sudo=True)
+                run("/usr/bin/systemctl reload nginx", sudo=True)
+            except Exception as rollback_error:  # noqa: BLE001
+                print(f"HTTPS rollback failed: {rollback_error}", file=sys.stderr)
+        raise
+    finally:
+        try:
+            run(f"/bin/rm -rf -- {shlex.quote(remote_upload)}")
+        except Exception:
+            pass
 
 
 def deploy(run, client, files: list[tuple[Path, str]]) -> None:
